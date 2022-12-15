@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h1>Brick Breaker!</h1>
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <h2>Szabályok:</h2>
+    <li>Ki kell ütni a blokkokat.</li>
+    <li>Nem érhet bele a pirosba.</li>
+    <li>Irányítás &leftarrow; és a &rightarrow; nyilakkal.</li>
+
+</body>
+<script>
+const ctx = canvas.getContext('2d');
+
+let score = 0;
+
+const brickRowCount = 9;
+const brickColumnCount = 5;
+
+const ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    size: 10,
+    speed: 4,
+    dx: 4,
+    dy: -4
+};
+const paddle = {
+    x: canvas.width / 2 -40,
+    y:canvas.height - 20,
+    w: 100,
+    h: 10,
+    speed: 8,
+    dx: 0
+};
+const brick = {
+    w: 70,
+    h: 20,
+    padding: 10,
+    offsetX: 45,
+    offsetY: 60,
+    visible: true
+};
+const bricks = [];
+for (let i = 0; i < brickRowCount; i++){
+    bricks[i] = [];
+    for(let j= 0; j< brickColumnCount; j++){
+        const x = i * (brick.w + brick.padding) + brick.offsetX;
+        const y = j * (brick.h + brick.padding) + brick.offsetY;
+        bricks[i][j] = { x, y, ...brick }; 
+    }
+}
+function ladba() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff9f00';
+    ctx.fill();
+    ctx.closePath();
+}
+function padd() {
+    ctx.beginPath();
+    ctx.rect(paddle.x, paddle.y, paddle.w, paddle.h);
+    ctx.fillStyle = '#ff9f00';
+    ctx.fill();
+    ctx.closePath();
+}
+function pontszam(){
+    ctx.font = '20px Arial';
+    ctx.fillText(`Pontszám: ${score}` , canvas.width - 150, 30);
+}
+function tegla(){
+    bricks.forEach(column => {
+        column.forEach(brick => {
+            ctx.beginPath();
+            ctx.rect(brick.x, brick.y, brick.w, brick.h);
+            ctx.fillStyle = brick.visible ? '#ff9f00' : 'transparent';
+            ctx.fill();
+            ctx.closePath();
+        });
+    });
+}
+function padmozgo() {
+    paddle.x += paddle.dx;
+
+    if(paddle.x + paddle.w > canvas.width){
+        paddle.x = canvas.width - paddle.w;
+    }
+
+    if(paddle.x < 0){
+        paddle.x = 0;
+    }
+}
+
+function ladbamozgo() {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+    
+    if(ball.x + ball.size > canvas.width || ball.x - ball.size < 0){
+        ball.dx *= -1; 
+    }
+    if(ball.y + ball.size > canvas.height || ball.y - ball.size < 0){
+        ball.dy *= -1; 
+    }
+    if(
+        ball.x - ball.size > paddle.x &&
+        ball.x + ball.size < paddle.x + paddle.w &&
+        ball.y + ball.size > paddle.y
+    ){
+        ball.dy = -ball.speed;
+    }
+    bricks.forEach(column => {
+        column.forEach(brick => {
+            if(brick.visible){
+                if(
+                    ball.x - ball.size > brick.x &&
+                    ball.x + ball.size < brick.x  + brick.w &&
+                    ball.y + ball.size > brick.y &&
+                    ball.y - ball.size < brick.y  + brick.h
+                ){
+                    ball.dy *= -1;
+                    brick.visible = false;
+
+                    pont();
+                }
+            }
+        });
+    });
+
+    if(ball.y + ball.size > canvas.height) {
+        ossztegla();
+        score = 0;
+    }
+}
+function pont() {
+    score++;
+
+    if(score % (brickRowCount * brickRowCount) === 0){
+        ossztegla();
+    }
+}
+function ossztegla() {
+    bricks.forEach(column => {
+        column.forEach(brick => (brick.visible = true));
+    });
+}
+function rajz() {
+
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    ladba();
+    padd();
+    pontszam();
+    tegla();
+}
+function uj() {
+    padmozgo();
+    ladbamozgo();
+
+    rajz();
+
+    requestAnimationFrame(uj);
+}
+uj();
+
+function nyil1(e) {
+    if(e.key === 'jobb' || e.key === 'ArrowRight'){
+        paddle.dx = paddle.speed
+    } else if (e.key === 'bal' || e.key === 'ArrowLeft') {
+        paddle.dx = -paddle.speed
+    }
+}
+function nyil2(e){
+    if(
+        e.key === 'jobb' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'bal' ||
+        e.key === 'ArrowLeft'
+    ){
+        paddle.dx = 0;
+    }
+}
+document.addEventListener('keydown', nyil1);
+document.addEventListener('keyup', nyil2);
+</script>
+<style>
+body{
+    background: url(brick.jpg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial;
+    margin: 0;
+    color: blue;
+}
+h1{
+    font-size: 60px;
+    color: aqua;
+}
+canvas{
+    background-color: aqua;
+    display: block;
+    border-radius: 5px;
+    border: solid 10px rgb(0, 0, 0);
+    border-block-end-color: red;
+}
+</style>
+</html>
